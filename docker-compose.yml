@@ -1,0 +1,71 @@
+version: '3.7'
+services:
+  traefik:
+    image: traefik:2.2
+    container_name: traefik
+    ports:
+      # The HTTP port
+      - "80:80"
+    volumes:
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+    networks:
+      - traefik
+
+  ghost_cms:
+    depends_on:
+      - db
+      - traefik
+    container_name: ghost_cms
+    image: ghost:3
+    env_file: .ghost.env
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.cms.rule=Host(`cms.docker.localhost`)"
+      - "traefik.http.services.cms.loadbalancer.server.port=2368"
+    volumes:
+      - www-data:/var/lib/ghost/content
+    networks:
+      - traefik
+      - lan_cms
+            
+  db:
+    image: mysql:5.7
+    container_name: mysql
+    env_file: .mysql.env
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - lan_cms
+
+  ghost_static:
+    container_name: static
+    depends_on: 
+      - traefik
+    image: gatsby-static:latest
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik"
+      - "traefik.http.routers.static.rule=Host(`prod.docker.localhost`)"
+      - "traefik.http.services.static.loadbalancer.server.port=80"
+    networks:
+      - traefik
+       
+volumes:
+  mysql-data:
+    name: mysql-data
+
+  www-data:
+    name: www-data
+
+networks:
+  lan_cms:
+    name: lan_cms
+
+  traefik:
+    name: traefik
+  
+  
