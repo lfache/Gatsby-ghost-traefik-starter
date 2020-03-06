@@ -1,0 +1,10 @@
+{
+  "development": {
+    "apiUrl": "http://cms.docker.localhost",
+    "contentApiKey": ""
+  },
+  "production": {
+    "apiUrl": "http://cms.docker.localhost",
+    "contentApiKey": ""
+  }
+}
